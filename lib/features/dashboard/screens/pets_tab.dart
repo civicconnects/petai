@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../../dashboard/models/pet.dart';
 import 'add_pet_screen.dart';
+import 'pet_chart_screen.dart';
 
 class PetsTab extends StatefulWidget {
   const PetsTab({super.key});
@@ -14,17 +16,25 @@ class _PetsTabState extends State<PetsTab> {
   final List<Pet> _pets = [
     Pet(
       id: '1',
-      name: 'Buddy',
+      idNumber: 'K9-8821',
+      name: 'Bella',
       breed: 'Golden Retriever',
       age: 2,
+      weight: 65.0,
+      sex: 'Female',
       color: 'Golden',
+      chronicConditions: ['None'],
     ),
     Pet(
       id: '2',
+      idNumber: 'K9-9943',
       name: 'Max',
       breed: 'German Shepherd',
-      age: 3,
+      age: 4,
+      weight: 85.0,
+      sex: 'Male',
       color: 'Black & Tan',
+      chronicConditions: ['Hip Dysplasia (Mild)'],
     ),
   ];
 
@@ -76,12 +86,21 @@ class _PetsTabState extends State<PetsTab> {
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(16),
                     leading: Container(
-                      padding: const EdgeInsets.all(12),
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         color: Colors.deepPurple.shade50,
                         shape: BoxShape.circle,
+                        image: pet.imagePath != null
+                            ? DecorationImage(
+                                image: FileImage(File(pet.imagePath!)),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.pets, color: Colors.deepPurple),
+                      child: pet.imagePath == null
+                          ? const Icon(Icons.pets, color: Colors.deepPurple, size: 30)
+                          : null,
                     ),
                     title: Text(
                       pet.name,
@@ -103,7 +122,12 @@ class _PetsTabState extends State<PetsTab> {
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      // TODO: Navigate to pet details
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PetChartScreen(pet: pet),
+                        ),
+                      );
                     },
                   ),
                 );

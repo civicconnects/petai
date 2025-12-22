@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../chat/screens/chat_screen.dart';
 import 'home_tab.dart';
 import 'pets_tab.dart';
+import 'profile_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,9 +15,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
   static const List<Widget> _widgetOptions = <Widget>[
-    HomeTab(),
+    ChatScreen(),
     PetsTab(),
-    Center(child: Text('Profile Page (Coming Soon)')),
+    ProfileTab(),
   ];
 
   void _onItemTapped(int index) {
@@ -37,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Ask Pet AI',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.pets_outlined),

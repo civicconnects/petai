@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../dashboard/models/pet.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/widgets/profile_image_picker.dart';
 
 class AddPetScreen extends StatefulWidget {
-  const AddPetScreen({super.key});
+  final Pet? petToEdit;
+  const AddPetScreen({super.key, this.petToEdit});
 
   @override
   State<AddPetScreen> createState() => _AddPetScreenState();
@@ -14,8 +18,30 @@ class _AddPetScreenState extends State<AddPetScreen> {
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
   final _ageController = TextEditingController();
+  final _weightController = TextEditingController();
   final _colorController = TextEditingController();
+  String _selectedSex = 'Male';
+  
+  // final _fileService = FileStorageService(); // Removed in favor of ProfileImagePicker
+  String? _selectedImagePath;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.petToEdit != null) {
+      final pet = widget.petToEdit!;
+      _nameController.text = pet.name;
+      _breedController.text = pet.breed;
+      _ageController.text = pet.age.toString();
+      _weightController.text = pet.weight.toString();
+      _colorController.text = pet.color;
+      _selectedSex = pet.sex;
+      _selectedImagePath = pet.imagePath;
+    }
+  }
+
+  // _pickImage removed, handled by widget
 
   void _savePet() async {
     if (_formKey.currentState!.validate()) {
@@ -27,11 +53,16 @@ class _AddPetScreenState extends State<AddPetScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
 
       final newPet = Pet(
-        id: const Uuid().v4(),
+        id: widget.petToEdit?.id ?? const Uuid().v4(),
+        idNumber: widget.petToEdit?.idNumber ?? 'K9-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
         name: _nameController.text,
         breed: _breedController.text,
-        age: int.parse(_ageController.text),
+        age: int.tryParse(_ageController.text) ?? 0,
+        weight: double.tryParse(_weightController.text) ?? 0.0,
+        sex: _selectedSex,
         color: _colorController.text,
+        imagePath: _selectedImagePath,
+        chronicConditions: widget.petToEdit?.chronicConditions ?? [], // Preserve conditions for now
       );
 
       if (mounted) {
@@ -48,6 +79,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
     _nameController.dispose();
     _breedController.dispose();
     _ageController.dispose();
+    _weightController.dispose();
     _colorController.dispose();
     super.dispose();
   }
@@ -56,7 +88,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add a New Pet'),
+        title: Text(widget.petToEdit != null ? 'Edit Medical Record' : 'Add a New Pet'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -65,6 +97,17 @@ class _AddPetScreenState extends State<AddPetScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: ProfileImagePicker(
+                  initialImagePath: _selectedImagePath,
+                  onImageSelected: (path) {
+                    setState(() {
+                      _selectedImagePath = path;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -95,22 +138,59 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _ageController,
+              Row(
+                children: [
+                   Expanded(
+                    child: TextFormField(
+                      controller: _ageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Age (yrs)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.cake),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                         if (value == null || value.isEmpty) return 'Required';
+                         return null;
+                      },
+                    ),
+                   ),
+                   const SizedBox(width: 16),
+                   Expanded(
+                    child: TextFormField(
+                      controller: _weightController, // Need to define this
+                      decoration: const InputDecoration(
+                        labelText: 'Weight (lbs)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.monitor_weight),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                         if (value == null || value.isEmpty) return 'Required';
+                         return null;
+                      },
+                    ),
+                   ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedSex,
                 decoration: const InputDecoration(
-                  labelText: 'Age (years)',
+                  labelText: 'Sex',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.cake),
+                  prefixIcon: Icon(Icons.transgender),
                 ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an age';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
+                items: ['Male', 'Female'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedSex = newValue!;
+                  });
                 },
               ),
               const SizedBox(height: 16),
@@ -122,9 +202,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   prefixIcon: Icon(Icons.palette),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a color or description';
-                  }
+                  if (value == null || value.isEmpty) return 'Required';
                   return null;
                 },
               ),

@@ -3,8 +3,12 @@ class Pet {
   final String name;
   final String breed;
   final int age;
+  final String idNumber; // Auto-generated ID, e.g., "K9-1234"
+  final double weight; // in lbs
+  final String sex; // 'Male', 'Female'
   final String color;
-  final String imageUrl; // For future use, e.g., if we add image picking
+  final List<String> chronicConditions;
+  final String? imagePath;
 
   Pet({
     required this.id,
@@ -12,6 +16,10 @@ class Pet {
     required this.breed,
     required this.age,
     required this.color,
-    this.imageUrl = '',
+    required this.idNumber,
+    required this.weight,
+    required this.sex,
+    this.chronicConditions = const [],
+    this.imagePath,
   });
 }
