@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../chat/screens/chat_screen.dart';
-import 'home_tab.dart';
+import '../../dashboard/screens/health_dashboard_screen.dart';
 import 'pets_tab.dart';
 import 'profile_tab.dart';
 
@@ -14,12 +14,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    ChatScreen(),
-    PetsTab(),
-    ProfileTab(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -28,33 +22,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Defined inside build to access _onItemTapped wrapper if needed, 
+    // or just passed directly. 
+    final List<Widget> widgetOptions = <Widget>[
+      HealthDashboardScreen(onNavigateToTab: _onItemTapped),
+      const ChatScreen(),
+      const PetsTab(),
+      const ProfileTab(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pet AI'),
-        automaticallyImplyLeading: false, // Don't show back button
+        title: const Text('PawPath AI'),
+        automaticallyImplyLeading: false, 
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: const Color(0xFF2D3142),
       ),
-      body: _widgetOptions.elementAt(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Ask Pet AI',
+      body: widgetOptions.elementAt(_selectedIndex),
+      bottomNavigationBar: NavigationBar( // Using NavigationBar (Material 3) for better 4-item layout
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        destinations: const [
+           NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Home',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: 'Ask AI',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.pets_outlined),
-            activeIcon: Icon(Icons.pets),
+            selectedIcon: Icon(Icons.pets),
             label: 'Pets',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            selectedIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        onTap: _onItemTapped,
       ),
     );
   }

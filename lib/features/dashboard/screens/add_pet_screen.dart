@@ -4,16 +4,20 @@ import 'dart:io';
 import '../../dashboard/models/pet.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/widgets/profile_image_picker.dart';
+import '../../../core/services/storage_service.dart';
 
-class AddPetScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../main.dart';
+
+class AddPetScreen extends ConsumerStatefulWidget {
   final Pet? petToEdit;
   const AddPetScreen({super.key, this.petToEdit});
 
   @override
-  State<AddPetScreen> createState() => _AddPetScreenState();
+  ConsumerState<AddPetScreen> createState() => _AddPetScreenState();
 }
 
-class _AddPetScreenState extends State<AddPetScreen> {
+class _AddPetScreenState extends ConsumerState<AddPetScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
@@ -62,8 +66,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
         sex: _selectedSex,
         color: _colorController.text,
         imagePath: _selectedImagePath,
-        chronicConditions: widget.petToEdit?.chronicConditions ?? [], // Preserve conditions for now
+        chronicConditions: widget.petToEdit?.chronicConditions ?? [],
       );
+
+      // Save to Hive
+      await ref.read(storageServiceProvider).savePet(newPet);
 
       if (mounted) {
         setState(() {

@@ -6,6 +6,9 @@ import '../services/veterinary_service.dart';
 import '../../../core/services/file_storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../widgets/triage_intake_form.dart';
+import '../../../core/widgets/emergency_alert_modal.dart';
+import '../models/triage_response.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -21,6 +24,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
   bool _isVoiceMode = true;
+  bool _showIntake = true; // Start with intake form
   
   final FileStorageService _fileService = FileStorageService();
   String? _selectedImagePath;
@@ -28,10 +32,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _messages.add(ChatMessage(
-      text: "Hello! I'm PawPath AI. Describe your pet's symptoms, and I'll help you triage the situation.",
-      isUser: false,
-    ));
+    // Message added after intake
   }
   
   // Audio Listener ... (Same as before)
@@ -56,11 +57,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _pickImage() async {
     final path = await _fileService.pickImage(ImageSource.camera); // Could allow gallery choice too
     if (path != null) {
-      setState(() {
-        _selectedImagePath = path;
-        _isVoiceMode = false; // Switch to text mode to visually confirm image + text
-      });
+      if (_showIntake) {
+         // If in intake mode, maybe attach to future chat? 
+         // For V4.0, let's just switch to chat mode if they want to add image, or keep logic simple.
+         // Let's assume image picking happens in chat.
+         setState(() {
+            _showIntake = false;
+            _selectedImagePath = path;
+         });
+      } else {
+        setState(() {
+          _selectedImagePath = path;
+          _isVoiceMode = false; 
+        });
+      }
     }
+  }
+
+  void _handleIntakeSubmit(Map<String, dynamic> data) async {
+    setState(() {
+      _showIntake = false;
+      _messages.add(ChatMessage(
+        text: "Analyzing case for a \${data['species']} (\${data['breed']})...",
+        isUser: false,
+      ));
+    });
+
+    final prompt = "Species: \${data['species']}, Breed: \${data['breed']}, Symptom: \${data['symptom']}, Duration: \${data['duration']}.";
+    _handleSubmitted(prompt);
   }
 
   void _handleSubmitted(String text) async {
@@ -88,7 +112,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // Get AI Response
     final vetService = ref.read(veterinaryServiceProvider);
-    final response = await vetService.analyzeSymptoms(
+    final TriageResponse response = await vetService.analyzeSymptoms(
       symptoms: text,
       petProfile: petProfile,
       imagePath: imageToSend,
@@ -97,12 +121,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (mounted) {
       setState(() {
         _isTyping = false;
-        _messages.add(ChatMessage(text: response, isUser: false));
+        _messages.add(ChatMessage(text: response.userAdvice, isUser: false));
       });
       _scrollToBottom();
       
       if (_isVoiceMode) {
-        audioCtrl.speak(response);
+        // Only read the advice, not the full JSON
+        audioCtrl.speak(response.userAdvice);
+      }
+
+      // Check for Emergency
+      if (response.isEmergency) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => EmergencyAlertModal(
+            onClose: () => Navigator.of(context).pop(),
+          ),
+        );
       }
     }
   }
@@ -145,7 +181,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: _showIntake 
+      ? TriageIntakeForm(onSubmit: _handleIntakeSubmit)
+      : Column(
         children: [
           Expanded(
             child: ListView.builder(

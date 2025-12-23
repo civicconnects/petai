@@ -1,54 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import '../../dashboard/models/pet.dart';
 import 'add_pet_screen.dart';
 import 'pet_chart_screen.dart';
+import '../../../../core/services/storage_service.dart';
+import '../../../../main.dart';
 
-class PetsTab extends StatefulWidget {
+class PetsTab extends ConsumerStatefulWidget {
   const PetsTab({super.key});
 
   @override
-  State<PetsTab> createState() => _PetsTabState();
+  ConsumerState<PetsTab> createState() => _PetsTabState();
 }
 
-class _PetsTabState extends State<PetsTab> {
-  // Mock data initially
-  final List<Pet> _pets = [
-    Pet(
-      id: '1',
-      idNumber: 'K9-8821',
-      name: 'Bella',
-      breed: 'Golden Retriever',
-      age: 2,
-      weight: 65.0,
-      sex: 'Female',
-      color: 'Golden',
-      chronicConditions: ['None'],
-    ),
-    Pet(
-      id: '2',
-      idNumber: 'K9-9943',
-      name: 'Max',
-      breed: 'German Shepherd',
-      age: 4,
-      weight: 85.0,
-      sex: 'Male',
-      color: 'Black & Tan',
-      chronicConditions: ['Hip Dysplasia (Mild)'],
-    ),
-  ];
+class _PetsTabState extends ConsumerState<PetsTab> {
+  List<Pet> _pets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPets();
+  }
+
+  void _loadPets() {
+    final storage = ref.read(storageServiceProvider);
+    setState(() {
+      _pets = storage.getPets();
+    });
+  }
 
   void _addPet() async {
-    final newPet = await Navigator.push<Pet>(
+    await Navigator.push<Pet>(
       context,
       MaterialPageRoute(builder: (context) => const AddPetScreen()),
     );
-
-    if (newPet != null) {
-      setState(() {
-        _pets.add(newPet);
-      });
-    }
+    _loadPets(); // Refresh list after returning
   }
 
   @override

@@ -2,10 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
+import 'core/services/storage_service.dart';
 import 'core/widgets/disclaimer_modal.dart';
 
-void main() {
-  runApp(const ProviderScope(child: PetAiApp()));
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final storageService = StorageService();
+  await storageService.init();
+  
+  runApp(
+    ProviderScope(
+      overrides: [
+        storageServiceProvider.overrideWithValue(storageService),
+      ],
+      child: const PetAiApp(),
+    ),
+  );
 }
 
 class PetAiApp extends StatefulWidget {
